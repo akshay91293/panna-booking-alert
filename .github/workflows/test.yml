@@ -3,6 +3,8 @@ name: Test Panna Monitor
 on:
   workflow_dispatch:
 
+  schedule:
+    - cron: "0 * * * *"
 permissions:
   contents: write
 
