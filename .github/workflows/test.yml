@@ -9,14 +9,12 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
@@ -25,8 +23,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Install Chromium
-        run: |
-          playwright install chromium
+        run: playwright install chromium
 
       - name: Run Monitor
         env:
@@ -38,8 +35,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: browser-screenshot
-          path: full_vehicle.png
+          name: booking-attempt
+          path: booking_attempt.png
 
       - name: Commit Updated State
         run: |
