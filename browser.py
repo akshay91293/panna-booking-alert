@@ -16,7 +16,11 @@ def verify():
             wait_until="networkidle"
         )
 
-        print("Title:", page.title())
+        page.check("#rdFullVehicle")
+
+        print("Full Vehicle selected.")
+
+        page.screenshot(path="full_vehicle.png")
 
         browser.close()
 
