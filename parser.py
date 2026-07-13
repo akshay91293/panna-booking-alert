@@ -1,47 +1,40 @@
 from bs4 import BeautifulSoup
 
+from models import Snapshot
 
-def parse(html: str):
+
+def parse(html: str) -> Snapshot:
 
     soup = BeautifulSoup(html, "lxml")
 
-    data = {}
+    snapshot = Snapshot()
 
-    # Backend season end date
     to_dt = soup.find(id="To_dt")
-    data["to_dt"] = to_dt["value"] if to_dt else None
+    snapshot.to_dt = to_dt["value"] if to_dt else None
 
-    # Park name
     park = soup.find("div", id="ParkHeading")
-    data["park_name"] = park.get_text(strip=True) if park else None
+    snapshot.park_name = park.get_text(strip=True) if park else None
 
-    # Rule image
     rule_img = soup.find("img", src=lambda s: s and "ForestNewRule" in s)
-    data["rule_image"] = rule_img["src"] if rule_img else None
+    snapshot.rule_image = rule_img["src"] if rule_img else None
 
-    # Single seat banner
     single = soup.find(id="SingleSeatlink")
-    data["single_seat_banner"] = (
+    snapshot.single_seat_banner = (
         single.get_text(" ", strip=True)
         if single else None
     )
 
-    # Tatkal banner
     tatkal = soup.find(id="TatkalLink")
-    data["tatkal_banner"] = (
+    snapshot.tatkal_banner = (
         tatkal.get_text(" ", strip=True)
         if tatkal else None
     )
 
-    # Entire Important Notes block
     notes = soup.select_one(".BlockContent")
 
-    if notes:
-        data["important_notes"] = notes.get_text(
-            "\n",
-            strip=True
-        )
-    else:
-        data["important_notes"] = None
+    snapshot.important_notes = (
+        notes.get_text("\n", strip=True)
+        if notes else None
+    )
 
-    return data
+    return snapshot
