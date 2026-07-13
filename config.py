@@ -1,58 +1,17 @@
-# config.py
+PARK_NAME = "Panna Monitor"
 
-PARK_NAME = "Panna Tiger Reserve"
+# Daily health report hour (24-hour clock, IST)
+DAILY_HEALTH_REPORT_HOUR = 9
 
-PARK_ID = 3
+# Website changes that should notify immediately
+IMPORTANT_FIELDS = {
+    "to_dt",
+    "rule_image",
+    "important_notes"
+}
 
-URL = f"https://forest.mponline.gov.in/Search.aspx?park={PARK_ID}"
-
-TELEGRAM_ENABLED = True
-
-TARGET_DATES = [
-    {
-        "label": "1 October",
-        "date": "Thu, 01 October 2026"
-    },
-    {
-        "label": "2 October",
-        "date": "Fri, 02 October 2026"
-    },
-    {
-        "label": "3 October",
-        "date": "Sat, 03 October 2026"
-    }
-]
-
-FIELD_METADATA = {
-
-    "to_dt": {
-        "label": "Backend Season End Date",
-        "weight": 5
-    },
-
-    "rule_image": {
-        "label": "Rule Book Image",
-        "weight": 4
-    },
-
-    "important_notes": {
-        "label": "Important Notes",
-        "weight": 3
-    },
-
-    "single_seat_banner": {
-        "label": "Single Seat Banner",
-        "weight": 1
-    },
-
-    "tatkal_banner": {
-        "label": "Tatkal Banner",
-        "weight": 1
-    },
-
-    "park_name": {
-        "label": "Park Name",
-        "weight": 0
-    }
-
+# Website changes that are only shown in daily report
+INFO_FIELDS = {
+    "tatkal_banner",
+    "single_seat_banner"
 }
