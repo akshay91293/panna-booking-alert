@@ -7,7 +7,9 @@ def calculate(changes):
 
     scored = []
 
-    for field in changes:
+    for change in changes:
+
+        field = change.field
 
         metadata = config.FIELD_METADATA.get(field)
 
@@ -16,15 +18,19 @@ def calculate(changes):
 
         score += metadata["weight"]
 
-        scored.append({
-            "field": field,
-            "label": metadata["label"],
-            "weight": metadata["weight"]
-        })
+        scored.append(
+            {
+                "field": field,
+                "label": metadata["label"],
+                "weight": metadata["weight"],
+                "previous": change.previous,
+                "current": change.current,
+            }
+        )
 
     scored.sort(
-        key=lambda item: item["weight"],
-        reverse=True
+        key=lambda x: x["weight"],
+        reverse=True,
     )
 
     return score, scored
