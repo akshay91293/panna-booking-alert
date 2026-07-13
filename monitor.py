@@ -12,7 +12,9 @@ def run():
 
     html = fetcher.download(config.URL)
 
-    current = parser.parse(html)
+    snapshot = parser.parse(html)
+
+    current = snapshot.to_dict()
 
     previous = state.load_state()
 
@@ -39,11 +41,11 @@ def run():
     lines.append("Changes detected:")
     lines.append("")
 
-    for item in changes:
+    for change in changes:
 
-        lines.append(f"• {item['field']}")
-        lines.append(f"Previous: {item['previous']}")
-        lines.append(f"Current : {item['current']}")
+        lines.append(f"• {change.field}")
+        lines.append(f"Previous: {change.previous}")
+        lines.append(f"Current : {change.current}")
         lines.append("")
 
     message = "\n".join(lines)
