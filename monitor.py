@@ -19,83 +19,21 @@ def run():
 
     previous = state.load_state()
 
-    if not previous:
-
-        print("First run detected.")
-
-        state.save_state(current)
-
-        return
-
     changes = comparer.compare(previous, current)
 
-    if not changes:
-
-        print("No changes detected.")
-
-        return
-
-    score, scored = scoring.calculate(changes)
-
-    lines = []
-
-    lines.append(f"🐯 {config.PARK_NAME}")
-    lines.append("")
-    lines.append(scoring.level(score))
-    lines.append("")
-    lines.append(f"Confidence Score: {score}")
-    lines.append("")
-    lines.append("Detected changes:")
-    lines.append("")
-
-    for item in scored:
-
-        c = item["change"]
-
-        lines.append(
-            f"• {item['label']} (+{item['weight']})"
-        )
-
-        lines.append(f"Previous: {c.previous}")
-
-        lines.append(f"Current : {c.current}")
-
-        lines.append("")
-
-    if score >= 8:
-
-        lines.append("🚨 Recommendation")
-
-        lines.append(
-            "Open the MP Forest booking portal immediately."
-        )
-
-    elif score >= 5:
-
-        lines.append("⚠ Recommendation")
-
-        lines.append(
-            "Keep a close watch on the booking portal."
-        )
-
-    else:
-
-        lines.append("ℹ Recommendation")
-
-        lines.append(
-            "Likely a routine website update."
-        )
-
-    message = "\n".join(lines)
-
-    print(message)
-
-    notifier.send(message)
+    print(f"Detected {len(changes)} HTML changes.")
 
     import browser
+
+    print("Launching browser...")
 
     result = browser.verify()
 
     print(result)
+
+    if changes:
+        notifier.send("HTML changed!")
+
+    state.save_state(current)
 
     state.save_state(current)
