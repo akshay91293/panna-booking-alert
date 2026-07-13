@@ -17,57 +17,46 @@ def run():
 
     response.raise_for_status()
 
-    current = parser.get_to_dt(response.text)
+    current = parser.parse(response.text)
 
-    saved = state.load_state()
+    previous = state.load_state()
 
-    previous = saved.get("to_dt")
-
-    print()
-    print("Previous :", previous)
-    print("Current  :", current)
-    print()
-
-    # First run
-    if previous is None:
+    if not previous:
 
         print("First run detected.")
-        print("Saving current value.")
 
-        saved["to_dt"] = current
-
-        state.save_state(saved)
+        state.save_state(current)
 
         return
 
-    # Something changed
-    if previous != current:
+    changes = []
 
-        message = f"""
-🐯 {config.PARK_NAME}
+    for key in current:
 
-🚨 CHANGE DETECTED!
+        if previous.get(key) != current.get(key):
 
-Previous
+            changes.append(key)
 
-{previous}
+    if not changes:
 
-Current
-
-{current}
-
-Check the MP Forest website immediately.
-"""
-
-        print(message)
-
-        notifier.send(message)
-
-        saved["to_dt"] = current
-
-        state.save_state(saved)
+        print("No changes detected.")
 
         return
 
-    # Nothing changed
-    print("No change detected.")
+    message = f"🐯 {config.PARK_NAME}\n\n"
+
+    message += "Changes detected:\n\n"
+
+    for key in changes:
+
+        message += (
+            f"• {key}\n"
+            f"Previous: {previous.get(key)}\n"
+            f"Current : {current.get(key)}\n\n"
+        )
+
+    print(message)
+
+    notifier.send(message)
+
+    state.save_state(current)
