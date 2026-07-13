@@ -1,3 +1,6 @@
+from models import Change
+
+
 def compare(previous: dict, current: dict):
 
     changes = []
@@ -8,10 +11,12 @@ def compare(previous: dict, current: dict):
 
         if previous.get(key) != current.get(key):
 
-            changes.append({
-                "field": key,
-                "previous": previous.get(key),
-                "current": current.get(key)
-            })
+            changes.append(
+                Change(
+                    field=key,
+                    previous=previous.get(key),
+                    current=current.get(key)
+                )
+            )
 
     return changes
