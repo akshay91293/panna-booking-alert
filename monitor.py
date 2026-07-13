@@ -20,40 +20,98 @@ def run():
 
     previous = state.load_state()
 
-    changes = comparer.compare(previous, current)
+    html_changes = comparer.compare(previous, current)
 
-    print(f"Detected {len(changes)} HTML changes.")
+    browser_results = browser.verify()
 
-    print("Launching browser...")
+    print()
 
-    result = browser.verify()
+    print("Browser Results")
 
-    print(result)
+    print(browser_results)
 
-    if changes:
+    message = []
 
-        score, scored = scoring.calculate(changes)
+    message.append(f"🐯 {config.PARK_NAME}")
+
+    message.append("")
+
+    message.append("Booking Status")
+
+    message.append("")
+
+    notify = False
+
+    previous_browser = previous.get(
+        "browser_results",
+        {}
+    )
+
+    current_browser = {}
+
+    for result in browser_results:
+
+        current_browser[result["date"]] = result["status"]
+
+        old = previous_browser.get(result["date"])
+
+        new = result["status"]
+
+        if old != new:
+
+            notify = True
+
+        icon = "✅"
+
+        if new == "PARK_CLOSED":
+            icon = "❌"
+
+        elif new == "UNKNOWN":
+            icon = "❓"
+
+        message.append(
+            f"{icon} {result['date']} : {new}"
+        )
+
+    current["browser_results"] = current_browser
+
+    state.save_state(current)
+
+    if notify:
+
+        caption = "\n".join(message)
+
+        notifier.send_photo(
+            "booking_attempt.png",
+            caption
+        )
+
+        notifier.send(caption)
+
+    elif html_changes:
+
+        score, scored = scoring.calculate(html_changes)
 
         lines = []
 
         lines.append(f"🐯 {config.PARK_NAME}")
+
         lines.append("")
-        lines.append(scoring.level(score))
-        lines.append("")
-        lines.append(f"Confidence Score: {score}")
-        lines.append("")
-        lines.append("Detected changes:")
+
+        lines.append("Website updated")
+
         lines.append("")
 
         for item in scored:
 
-            c = item["change"]
+            lines.append(
+                f"• {item['label']}"
+            )
 
-            lines.append(f"• {item['label']} (+{item['weight']})")
-            lines.append(f"Previous: {c.previous}")
-            lines.append(f"Current : {c.current}")
-            lines.append("")
+        notifier.send(
+            "\n".join(lines)
+        )
 
-        notifier.send("\n".join(lines))
+    else:
 
-    state.save_state(current)
+        print("No meaningful changes.")
