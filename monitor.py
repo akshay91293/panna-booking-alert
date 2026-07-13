@@ -92,4 +92,10 @@ def run():
 
     notifier.send(message)
 
+    import browser
+
+    result = browser.verify()
+
+    print(result)
+
     state.save_state(current)
