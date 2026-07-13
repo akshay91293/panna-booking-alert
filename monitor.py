@@ -3,6 +3,7 @@ import requests
 import config
 import notifier
 import parser
+import state
 
 
 def run():
@@ -18,47 +19,55 @@ def run():
 
     current = parser.get_to_dt(response.text)
 
-    print()
+    saved = state.load_state()
 
-    print("Expected :", config.EXPECTED_TO_DT)
+    previous = saved.get("to_dt")
+
+    print()
+    print("Previous :", previous)
     print("Current  :", current)
-
     print()
 
-    if current != config.EXPECTED_TO_DT:
+    # First run
+    if previous is None:
+
+        print("First run detected.")
+        print("Saving current value.")
+
+        saved["to_dt"] = current
+
+        state.save_state(saved)
+
+        return
+
+    # Something changed
+    if previous != current:
 
         message = f"""
 🐯 {config.PARK_NAME}
 
-CHANGE DETECTED
+🚨 CHANGE DETECTED!
 
-Expected
+Previous
 
-{config.EXPECTED_TO_DT}
+{previous}
 
 Current
 
 {current}
 
-Check booking immediately.
+Check the MP Forest website immediately.
 """
 
         print(message)
 
         notifier.send(message)
 
-    else:
+        saved["to_dt"] = current
 
-        print("No change detected.")
+        state.save_state(saved)
 
-        notifier.send(
-f"""✅ {config.PARK_NAME}
+        return
 
-Everything is working.
-
-Current backend date
-
-{current}
-
-No change detected."""
-)
+    # Nothing changed
+    print("No change detected.")
