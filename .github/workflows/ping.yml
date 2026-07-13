@@ -1,0 +1,16 @@
+name: Scheduler Test
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "0 * * * *"
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: |
+          echo "Scheduler works!"
+          date
