@@ -1,8 +1,8 @@
-import requests
-
 import config
-import notifier
+import fetcher
 import parser
+import comparer
+import notifier
 import state
 
 
@@ -10,14 +10,9 @@ def run():
 
     print("Downloading page...")
 
-    response = requests.get(
-        config.URL,
-        timeout=30
-    )
+    html = fetcher.download(config.URL)
 
-    response.raise_for_status()
-
-    current = parser.parse(response.text)
+    current = parser.parse(html)
 
     previous = state.load_state()
 
@@ -29,13 +24,7 @@ def run():
 
         return
 
-    changes = []
-
-    for key in current:
-
-        if previous.get(key) != current.get(key):
-
-            changes.append(key)
+    changes = comparer.compare(previous, current)
 
     if not changes:
 
@@ -43,17 +32,21 @@ def run():
 
         return
 
-    message = f"🐯 {config.PARK_NAME}\n\n"
+    lines = []
 
-    message += "Changes detected:\n\n"
+    lines.append(f"🐯 {config.PARK_NAME}")
+    lines.append("")
+    lines.append("Changes detected:")
+    lines.append("")
 
-    for key in changes:
+    for item in changes:
 
-        message += (
-            f"• {key}\n"
-            f"Previous: {previous.get(key)}\n"
-            f"Current : {current.get(key)}\n\n"
-        )
+        lines.append(f"• {item['field']}")
+        lines.append(f"Previous: {item['previous']}")
+        lines.append(f"Current : {item['current']}")
+        lines.append("")
+
+    message = "\n".join(lines)
 
     print(message)
 
