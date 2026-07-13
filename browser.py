@@ -1,56 +1,84 @@
 from playwright.sync_api import sync_playwright
+import config
+
+URL = config.URL
 
 
-URL = "https://forest.mponline.gov.in/Search.aspx?park=3"
+def check_date(page, safari_date):
+
+    result = {
+        "date": safari_date["label"],
+        "status": "UNKNOWN",
+        "alert": None
+    }
+
+    dialog_message = {"text": None}
+
+    def handle_dialog(dialog):
+        dialog_message["text"] = dialog.message
+        dialog.accept()
+
+    page.remove_listener("dialog", handle_dialog)
+    page.on("dialog", handle_dialog)
+
+    page.goto(URL, wait_until="networkidle")
+
+    page.check("#rdFullVehicle")
+
+    page.evaluate(
+        """(value) => {
+            document.querySelector("#txtdate").value = value;
+        }""",
+        safari_date["date"]
+    )
+
+    page.click("#btnshow")
+
+    page.wait_for_timeout(3000)
+
+    if dialog_message["text"]:
+
+        result["alert"] = dialog_message["text"]
+
+        if "Park Closed" in dialog_message["text"]:
+            result["status"] = "PARK_CLOSED"
+
+        else:
+            result["status"] = "ALERT"
+
+    else:
+
+        result["status"] = "POSSIBLY_OPEN"
+
+    return result
 
 
 def verify():
 
-    result = {
-        "status": "unknown",
-        "alert": None
-    }
+    output = []
 
     with sync_playwright() as p:
 
-        browser = p.chromium.launch(headless=True)
-
-        page = browser.new_page(
-            viewport={"width": 1600, "height": 900}
+        browser = p.chromium.launch(
+            headless=True
         )
 
-        # Capture javascript alerts
-        def handle_dialog(dialog):
-            print("ALERT:", dialog.message)
-            result["alert"] = dialog.message
-            dialog.accept()
-
-        page.on("dialog", handle_dialog)
-
-        page.goto(URL, wait_until="networkidle")
-
-        print("Title:", page.title())
-
-        # Select Full Vehicle
-        page.check("#rdFullVehicle")
-
-        print("Selected Full Vehicle")
-
-        # Fill the date directly
-        page.evaluate("""
-            () => {
-                document.querySelector('#txtdate').value =
-                    'Thu, 15 October 2026';
+        page = browser.new_page(
+            viewport={
+                "width": 1600,
+                "height": 900
             }
-        """)
+        )
 
-        print("Date entered")
+        for safari_date in config.TARGET_DATES:
 
-        # Click Search
-        page.click("#btnshow")
+            print(f"Checking {safari_date['label']}")
 
-        # Wait a few seconds for postback / alert
-        page.wait_for_timeout(5000)
+            result = check_date(page, safari_date)
+
+            print(result)
+
+            output.append(result)
 
         page.screenshot(
             path="booking_attempt.png",
@@ -59,12 +87,4 @@ def verify():
 
         browser.close()
 
-    if result["alert"]:
-
-        result["status"] = "closed"
-
-    else:
-
-        result["status"] = "unknown"
-
-    return result
+    return output
