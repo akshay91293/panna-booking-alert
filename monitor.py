@@ -7,6 +7,9 @@ import parser
 import scoring
 import state
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 
 def run():
 
@@ -15,103 +18,133 @@ def run():
     html = fetcher.download(config.URL)
 
     snapshot = parser.parse(html)
-
     current = snapshot.to_dict()
 
     previous = state.load_state()
 
-    html_changes = comparer.compare(previous, current)
+    previous_compare = previous.copy()
+    current_compare = current.copy()
+
+    previous_compare.pop("browser_results", None)
+    current_compare.pop("browser_results", None)
+    previous_compare.pop("health_report_date", None)
+    current_compare.pop("health_report_date", None)
+
+    html_changes = comparer.compare(previous_compare, current_compare)
 
     browser_results = browser.verify()
 
-    print()
-
-    print("Browser Results")
-
-    print(browser_results)
-
-    message = []
-
-    message.append(f"🐯 {config.PARK_NAME}")
-
-    message.append("")
-
-    message.append("Booking Status")
-
-    message.append("")
-
-    notify = False
-
-    previous_browser = previous.get(
-        "browser_results",
-        {}
-    )
-
+    previous_browser = previous.get("browser_results", {})
     current_browser = {}
+
+    booking_changed = False
+    booking_lines = []
 
     for result in browser_results:
 
         current_browser[result["date"]] = result["status"]
 
-        old = previous_browser.get(result["date"])
+        if previous_browser.get(result["date"]) != result["status"]:
+            booking_changed = True
 
-        new = result["status"]
-
-        if old != new:
-
-            notify = True
-
-        icon = "✅"
-
-        if new == "PARK_CLOSED":
-            icon = "❌"
-
-        elif new == "UNKNOWN":
+        icon = "❌"
+        if result["status"] == "POSSIBLY_OPEN":
+            icon = "✅"
+        elif result["status"] == "UNKNOWN":
             icon = "❓"
 
-        message.append(
-            f"{icon} {result['date']} : {new}"
+        booking_lines.append(
+            f'{icon} {result["date"]}  {config.STATUS_TEXT.get(result["status"], result["status"])}'
         )
 
     current["browser_results"] = current_browser
 
-    state.save_state(current)
+    score, scored = scoring.calculate(html_changes)
 
-    if notify:
+    important = []
+    informational = []
 
-        caption = "\n".join(message)
+    for item in scored:
+        if item["field"] in config.IMPORTANT_FIELDS:
+            important.append(item["label"])
+        elif item["field"] in config.INFO_FIELDS:
+            informational.append(item["label"])
 
-        notifier.send_photo(
-            "booking_attempt.png",
-            caption
-        )
+    now = datetime.now(ZoneInfo("Asia/Kolkata"))
+    today = now.date().isoformat()
 
-        notifier.send(caption)
+    daily_health = (
+        now.hour == config.DAILY_HEALTH_REPORT_HOUR
+        and previous.get("health_report_date") != today
+    )
 
-    elif html_changes:
+    if booking_changed:
 
-        score, scored = scoring.calculate(html_changes)
+        msg = [
+            "🐯 Panna Monitor",
+            "",
+            "🚨 Booking Status Changed",
+            "",
+            "Booking Status",
+            ""
+        ]
+        msg.extend(booking_lines)
 
-        lines = []
+        notifier.send_photo("booking_attempt.png", "\n".join(msg))
 
-        lines.append(f"🐯 {config.PARK_NAME}")
+    elif important:
 
-        lines.append("")
+        msg = [
+            "🐯 Panna Monitor",
+            "",
+            "🚨 Website Updated",
+            ""
+        ]
 
-        lines.append("Website updated")
+        for x in important:
+            msg.append(f"• {x}")
 
-        lines.append("")
+        notifier.send("\n".join(msg))
 
-        for item in scored:
+    elif daily_health:
 
-            lines.append(
-                f"• {item['label']}"
-            )
+        msg = [
+            "🐯 Panna Monitor",
+            "",
+            "✅ Monitor is healthy",
+            "",
+            f"🕒 Last checked\n{now.strftime('%d %b %Y %H:%M IST')}",
+            "",
+            "──────────────",
+            "",
+            "Booking Status",
+            ""
+        ]
 
-        notifier.send(
-            "\n".join(lines)
-        )
+        msg.extend(booking_lines)
+
+        msg.extend([
+            "",
+            "──────────────",
+            "",
+            "Website"
+        ])
+
+        if informational:
+            for x in informational:
+                msg.append(f"• {x}")
+        else:
+            msg.append("No significant changes detected.")
+
+        msg.extend([
+            "",
+            "🌿 Still keeping watch..."
+        ])
+
+        notifier.send("\n".join(msg))
+        current["health_report_date"] = today
 
     else:
-
         print("No meaningful changes.")
+
+    state.save_state(current)
