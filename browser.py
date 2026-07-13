@@ -4,81 +4,67 @@ import config
 URL = config.URL
 
 
-def check_date(page, safari_date):
-
-    result = {
-        "date": safari_date["label"],
-        "status": "UNKNOWN",
-        "alert": None
-    }
-
-    dialog_message = {"text": None}
-
-    def handle_dialog(dialog):
-        dialog_message["text"] = dialog.message
-        dialog.accept()
-
-    page.remove_listener("dialog", handle_dialog)
-    page.on("dialog", handle_dialog)
-
-    page.goto(URL, wait_until="networkidle")
-
-    page.check("#rdFullVehicle")
-
-    page.evaluate(
-        """(value) => {
-            document.querySelector("#txtdate").value = value;
-        }""",
-        safari_date["date"]
-    )
-
-    page.click("#btnshow")
-
-    page.wait_for_timeout(3000)
-
-    if dialog_message["text"]:
-
-        result["alert"] = dialog_message["text"]
-
-        if "Park Closed" in dialog_message["text"]:
-            result["status"] = "PARK_CLOSED"
-
-        else:
-            result["status"] = "ALERT"
-
-    else:
-
-        result["status"] = "POSSIBLY_OPEN"
-
-    return result
-
-
 def verify():
 
-    output = []
+    results = []
+
+    last_dialog = {"text": None}
+
+    def handle_dialog(dialog):
+        last_dialog["text"] = dialog.message
+        print("ALERT:", dialog.message)
+        dialog.accept()
 
     with sync_playwright() as p:
 
-        browser = p.chromium.launch(
-            headless=True
-        )
+        browser = p.chromium.launch(headless=True)
 
         page = browser.new_page(
-            viewport={
-                "width": 1600,
-                "height": 900
-            }
+            viewport={"width": 1600, "height": 900}
         )
+
+        page.on("dialog", handle_dialog)
 
         for safari_date in config.TARGET_DATES:
 
             print(f"Checking {safari_date['label']}")
 
-            result = check_date(page, safari_date)
+            last_dialog["text"] = None
+
+            page.goto(URL, wait_until="networkidle")
+
+            page.check("#rdFullVehicle")
+
+            page.evaluate(
+                """(value) => {
+                    document.querySelector("#txtdate").value = value;
+                }""",
+                safari_date["date"]
+            )
+
+            page.click("#btnshow")
+
+            page.wait_for_timeout(3000)
+
+            if last_dialog["text"]:
+
+                if "Park Closed" in last_dialog["text"]:
+                    status = "PARK_CLOSED"
+                else:
+                    status = "ALERT"
+
+            else:
+                status = "POSSIBLY_OPEN"
+
+            result = {
+                "date": safari_date["label"],
+                "status": status,
+                "alert": last_dialog["text"]
+            }
 
             print(result)
 
-            output.append(result)
+            results.append(result)
 
         page.screenshot(
             path="booking_attempt.png",
@@ -87,4 +73,4 @@ def verify():
 
         browser.close()
 
-    return output
+    return results
