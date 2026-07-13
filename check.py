@@ -1,20 +1,33 @@
-from playwright.sync_api import sync_playwright
+import requests
+from bs4 import BeautifulSoup
 
-with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True)
+URL = "https://forest.mponline.gov.in/Search.aspx?park=3"
 
-    page = browser.new_page(
-        viewport={"width": 1600, "height": 900}
-    )
+EXPECTED_TO_DT = "9/30/2026 11:59:59 PM"
 
-    page.goto(
-        "https://forest.mponline.gov.in/Search.aspx?park=3",
-        wait_until="networkidle"
-    )
+print("Downloading page...")
 
-    page.screenshot(path="screenshot.png", full_page=True)
+response = requests.get(URL, timeout=30)
 
-    with open("page.html", "w", encoding="utf-8") as f:
-        f.write(page.content())
+print("Status:", response.status_code)
 
-    browser.close()
+response.raise_for_status()
+
+soup = BeautifulSoup(response.text, "lxml")
+
+to_dt = soup.find(id="To_dt")
+
+if not to_dt:
+    raise Exception("Could not locate To_dt field.")
+
+current = to_dt["value"]
+
+print()
+print("Expected :", EXPECTED_TO_DT)
+print("Current  :", current)
+print()
+
+if current != EXPECTED_TO_DT:
+    print("🚨 CHANGE DETECTED!")
+else:
+    print("No change.")
