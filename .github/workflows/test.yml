@@ -9,7 +9,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
 
     steps:
       - name: Checkout Repository
@@ -23,14 +23,23 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
+
       - name: Install Chromium
-        run: playwright install chromium
+        run: |
+          playwright install chromium
 
       - name: Run Monitor
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: python check.py
+
+      - name: Upload Screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-screenshot
+          path: full_vehicle.png
 
       - name: Commit Updated State
         run: |
