@@ -2,19 +2,24 @@ URL = "https://forest.mponline.gov.in/Search.aspx?park=3"
 
 PARK_NAME = "Panna Monitor"
 
-DATES_TO_CHECK = [
-    "1 October",
-    "2 October",
-    "3 October"
+# Dates to monitor
+TARGET_DATES = [
+    {
+        "label": "1 Oct",
+        "date": "Thu, 01 October 2026"
+    },
+    {
+        "label": "2 Oct",
+        "date": "Fri, 02 October 2026"
+    },
+    {
+        "label": "3 Oct",
+        "date": "Sat, 03 October 2026"
+    }
 ]
 
-# Daily Health Report (24-hour IST)
+# Daily Health Report (IST)
 DAILY_HEALTH_REPORT_HOUR = 9
-
-
-# -----------------------------
-# Website Change Classification
-# -----------------------------
 
 FIELD_METADATA = {
 
@@ -44,25 +49,16 @@ FIELD_METADATA = {
     }
 }
 
-
-# Fields that should immediately notify
-
 IMPORTANT_FIELDS = {
     "to_dt",
     "important_notes",
     "rule_image"
 }
 
-
-# Fields that appear only in Daily Health Report
-
 INFO_FIELDS = {
     "tatkal_banner",
     "single_seat_banner"
 }
-
-
-# Status text shown in Telegram
 
 STATUS_TEXT = {
 
