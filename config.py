@@ -8,6 +8,20 @@ URL = f"https://forest.mponline.gov.in/Search.aspx?park={PARK_ID}"
 
 TELEGRAM_ENABLED = True
 
+TARGET_DATES = [
+    {
+        "label": "1 October",
+        "date": "Thu, 01 October 2026"
+    },
+    {
+        "label": "2 October",
+        "date": "Fri, 02 October 2026"
+    },
+    {
+        "label": "3 October",
+        "date": "Sat, 03 October 2026"
+    }
+]
 
 FIELD_METADATA = {
 
