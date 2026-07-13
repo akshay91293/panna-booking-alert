@@ -3,40 +3,28 @@ import config
 
 def calculate(changes):
 
-    total = 0
+    score = 0
 
-    scored_changes = []
+    scored = []
 
-    for change in changes:
+    for field in changes:
 
-        metadata = config.FIELD_METADATA.get(
-            change.field,
-            {
-                "label": change.field,
-                "weight": 1
-            }
-        )
+        metadata = config.FIELD_METADATA.get(field)
 
-        scored_changes.append({
-            "change": change,
+        if metadata is None:
+            continue
+
+        score += metadata["weight"]
+
+        scored.append({
+            "field": field,
             "label": metadata["label"],
             "weight": metadata["weight"]
         })
 
-        total += metadata["weight"]
+    scored.sort(
+        key=lambda item: item["weight"],
+        reverse=True
+    )
 
-    return total, scored_changes
-
-
-def level(score):
-
-    if score >= 8:
-        return "★★★★★ VERY HIGH"
-
-    if score >= 5:
-        return "★★★★ HIGH"
-
-    if score >= 3:
-        return "★★★ MEDIUM"
-
-    return "★ LOW"
+    return score, scored
